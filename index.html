@@ -125,7 +125,7 @@ td.m.wk sup{font-size:9px;margin-left:1px}
 <body>
 <header class="top">
   <div>
-    <h1>Roczny harmonogram i kalendarz konserwacji<span class="exp">v1.6 ARKUSZ · TEST</span></h1>
+    <h1>Roczny harmonogram i kalendarz konserwacji<span class="exp">v1.7 ARKUSZ · TEST</span></h1>
     <div class="sub">Maszyna → podzespół → komponent · kliknij pole miesiąca, by wpisać kod</div>
   </div>
   <div style="display:flex;align-items:center;gap:18px">
@@ -179,7 +179,7 @@ td.m.wk sup{font-size:9px;margin-left:1px}
 <div class="notes">
   <p><b>Typy zadań:</b> Wym — naprawa / wymiana · Smar — smarowanie · Insp — inspekcja · U/R — ustawienie i regulacja · Test — test · Kal — kalibracja.</p>
   <p><b>Zadania „Co tydzień”:</b> pole miesiąca pokazuje <b>wykonane/zaplanowane tygodnie</b> (np. 3/4, kreskowane podkreślenie). Kliknięcie otwiera tygodnie tego miesiąca — każdy tydzień dostaje własny kod Z / W / A / D. Tydzień należy do miesiąca, w którym wypada jego czwartek (tygodnie ISO), więc żaden nie liczy się podwójnie. W podsumowaniu każdy tydzień to jedno zadanie.</p>
-  <p>Każdy komponent ma własne pola miesięcy. LIH SHENG 2 ma ten sam podział co LIH SHENG 1. Sklejarki, Kaszerownica, KLETT i T-one czekają na podział — w „Edycja planu” dodaje się podzespoły i komponenty.</p>
+  <p>Każdy komponent ma własne pola miesięcy. LIH SHENG 2 ma ten sam podział co LIH SHENG 1. Sklejarki, Kaszerownica, Linia pakująca i T-one czekają na podział — w „Edycja planu” dodaje się podzespoły i komponenty.</p>
   <p>Zmiany zapisują się we <b>wspólnym arkuszu Google</b> (stan zapisu — w prawym górnym rogu). Zmiany innych osób pojawiają się same w ciągu ok. 30 s. Usunięte komponenty zostają w arkuszu ze znacznikiem „usunięty”, a każda zmiana trafia do zakładki „Dziennik”. „Kopia (JSON)” pobiera aktualny stan na dysk.</p>
 </div>
 
@@ -269,7 +269,7 @@ function excelRaw(){
     {name:'LIH SHENG 2',groups:ls()},
   ].concat(NEW_MACHINES.map(n=>({name:n,groups:[]})))};
 }
-const NEW_MACHINES=['SKLEJARKA 1','SKLEJARKA 2','SKLEJARKA IICZ.','KASZEROWNICA','KLETT','T-one'];
+const NEW_MACHINES=['SKLEJARKA 1','SKLEJARKA 2','SKLEJARKA IICZ.','KASZEROWNICA','Linia pakująca','T-one'];
 const newRow=(t)=>({part:'',type:t?t.type:'',opis:'',czas:t?t.czas:'',freq:t?t.freq:'',odp:t?t.odp:'',months:Array(12).fill(''),weeks:Array(53).fill('')});
 const newGroup=sub=>({sub:sub||'',rows:[newRow()]});
 
@@ -375,16 +375,12 @@ async function refresh(force){
     if(!o.ok){ if(o.blad==='ZLY_PIN'||o.blad==='BRAK_PIN') gate(o.blad); return; }
     if(!force&&(Q.length||busy||timers.size||popFor)) return;      // w międzyczasie ktoś zaczął zmieniać — nie nadpisuj
     buildD(o); lastLoad=Date.now(); offline=false;
-    if(SERWER_PUSTY) gate('PUSTY'); else { hideGate(); dopiszMaszyny(o); }
+    if(SERWER_PUSTY) gate('PUSTY'); else hideGate();
+    // v1.7: lista maszyn pochodzi WYŁĄCZNIE z arkusza (zakładka Maszyny) — strona już nic sama nie dopisuje,
+    // dzięki temu zmiana nazwy maszyny w arkuszu (np. KLETT → Linia pakująca) zostaje na stałe.
     render(); status();
   }catch(e){ offline=true; status(); if(!D.machines.length) gate('SIEC'); }
   finally{ loading=false; }
-}
-function dopiszMaszyny(o){
-  const brak=NEW_MACHINES.concat(['CURIONI','LIH SHENG 1','LIH SHENG 2']).filter(n=>!(o.maszyny||[]).some(m=>m.nazwa===n));
-  if(!brak.length) return;
-  brak.forEach(n=>{if(!D.machines.some(m=>m.name===n)) D.machines.push({name:n,groups:[]});});
-  send(()=>({akcja:'maszyny',nazwy:brak}));
 }
 setInterval(()=>refresh(false),30000);                       // zmiany innych osób — co 30 s
 document.addEventListener('visibilitychange',()=>{if(!document.hidden) refresh(false);});
