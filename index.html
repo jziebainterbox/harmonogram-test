@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harmonogram konserwacji</title>
+<style>
+:root{
+  --bg:#f6f5f1; --paper:#fff; --ink:#1d1f22; --muted:#6b6f76; --line:#d9d6cf; --line2:#ebe8e2;
+  --head:#24303d; --headInk:#fff; --mach:#eef1f4; --accent:#1f5f8b; --fill:#fffbe6;
+  --z:#dbe9f7; --zInk:#1d4f7a; --w:#d5efd9; --wInk:#1d6b31; --a:#f7d4d1; --aInk:#a3241b; --d:#fbe3c4; --dInk:#94540c;
+  --today:#fff3b0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+header.top{padding:18px 20px 10px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+h1{margin:0;font-size:20px;letter-spacing:.02em;text-transform:uppercase}
+.sub{color:var(--muted);font-size:13px;margin-top:2px}
+.year{display:flex;align-items:center;gap:6px;font-weight:600}
+.year button{border:1px solid var(--line);background:var(--paper);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:15px}
+.year span{min-width:48px;text-align:center;font-size:18px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:0 20px 12px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-right:8px}
+.tabs button{border:1px solid var(--line);background:var(--paper);padding:6px 12px;border-radius:999px;cursor:pointer;font:inherit;color:var(--ink)}
+.tabs button.on{background:var(--head);border-color:var(--head);color:#fff}
+.bar input[type=search]{border:1px solid var(--line);border-radius:6px;padding:6px 10px;font:inherit;min-width:200px;background:var(--paper)}
+.bar .sp{flex:1}
+.btn{border:1px solid var(--line);background:var(--paper);padding:6px 11px;border-radius:6px;cursor:pointer;font:inherit;color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:#b9b4a9}
+.btn.on{background:#fff4d6;border-color:#d8b24a}
+#bEdit{background:#c62828;border-color:#a51f1f;color:#fff;font-weight:600;box-shadow:0 1px 3px rgba(166,31,31,.35)}
+#bEdit:hover{background:#b71c1c;border-color:#8e1616}
+#bEdit.on{background:#7f1414;border-color:#5f0e0e;color:#fff;box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.wrap{padding:0 20px 20px;overflow:auto}
+table{border-collapse:collapse;background:var(--paper);min-width:1180px;width:100%}
+th,td{border:1px solid var(--line);padding:5px 7px;vertical-align:middle}
+thead th{background:var(--head);color:var(--headInk);font-weight:600;font-size:12.5px;text-align:center;position:sticky;top:0;z-index:2}
+thead tr:nth-child(2) th{top:31px}
+thead th.l{text-align:left}
+td.mach{background:var(--mach);font-weight:700;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;white-space:nowrap;width:34px;letter-spacing:.05em}
+td.subasm{font-weight:600}
+td.txt{font-size:13px}
+td.c{text-align:center;white-space:nowrap}
+td.m{width:46px;min-width:46px;text-align:center;font-weight:700;cursor:pointer;user-select:none;font-size:12.5px}
+td.m:hover{outline:2px solid var(--accent);outline-offset:-2px}
+td.m.cur{box-shadow:inset 0 3px 0 #d8b24a}
+th.cur{background:#3a4d61}
+.k-Z{background:var(--z);color:var(--zInk)}
+.k-W{background:var(--w);color:var(--wInk)}
+.k-D{background:var(--d);color:var(--dInk)}
+.k-A{background:var(--a);color:var(--aInk)}
+tr.grp td{border-top:2px solid #b9b4a9}
+tr.mstart td{border-top:3px solid var(--head)}
+.empty{color:#b0aca4}
+body.edit [contenteditable]{background:var(--fill);outline:1px dashed #d8c77a;outline-offset:-3px;min-height:1.4em;display:block}
+body.edit [contenteditable]:focus{outline:2px solid var(--accent);background:#fff}
+.rozpisz{display:none;margin-top:4px;font-size:11.5px;padding:2px 6px}
+body.edit .rozpisz{display:inline-block}
+tr.emptyM td.mach{height:150px}
+td.none{color:var(--muted);font-style:italic;padding:12px}
+.tools{display:flex;gap:4px;margin-top:6px}
+.btn.add,.btn.del{font-size:11.5px;padding:2px 7px}
+.btn.add{color:var(--accent);border-color:#b8cde0}
+.btn.del{color:var(--aInk);border-color:#e6b9b4}
+.btn.x{float:right;margin-left:6px;padding:0 6px}
+select.freq{font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:4px;padding:2px;max-width:120px;background:var(--fill)}
+tfoot td{background:#f2f0eb;font-weight:600;font-size:13px}
+tfoot td.lab{text-align:left}
+tfoot tr.pct td{background:#e9eef3}
+.legend{display:flex;flex-wrap:wrap;gap:18px;padding:14px 20px 4px;font-size:13px;color:var(--muted)}
+.legend .chip{display:inline-block;min-width:34px;padding:2px 6px;border-radius:4px;text-align:center;font-weight:700;margin-right:6px}
+.notes{padding:4px 20px 30px;font-size:12.5px;color:var(--muted)}
+.notes p{margin:4px 0}
+#pop{position:fixed;z-index:50;background:var(--paper);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:8px;display:none;width:236px}
+#pop .t{font-size:12px;color:var(--muted);margin:0 2px 6px;line-height:1.3}
+#pop .g{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+#pop button{border:1px solid var(--line);border-radius:5px;padding:7px 0;font:inherit;font-weight:700;cursor:pointer;background:#fff}
+#pop button.sel{outline:2px solid var(--accent)}
+#pop button.clr{grid-column:span 4;font-weight:400;color:var(--muted)}
+td.m.wk{font-size:11.5px;font-weight:600;background-image:linear-gradient(90deg,rgba(0,0,0,.18) 50%,transparent 50%);background-size:6px 2px;background-repeat:repeat-x;background-position:0 100%}
+td.m.wk sup{font-size:9px;margin-left:1px}
+#pop.weekly{width:400px}
+#pop.weekly .g{display:block}
+#pop .wrow{display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--line2)}
+#pop .wl{width:78px;font-size:12px;line-height:1.2}
+#pop .wl span{display:block;color:var(--muted);font-size:11px}
+#pop .wb{display:flex;gap:3px;flex:1}
+#pop .wb button{flex:1;padding:5px 0;font-size:11px}
+#pop .wb button.x{flex:0 0 auto;padding:5px 7px;color:var(--aInk);font-weight:400;border-color:#e6b9b4}
+#pop .wb button.x:disabled{color:#c9c5bd;border-color:var(--line2);cursor:default}
+#pop .wfoot{display:flex;gap:5px;margin-top:6px}#pop .wfoot button.clr{color:var(--aInk);border-color:#e6b9b4}
+#pop .wfoot button{flex:1;font-weight:400;font-size:12px;padding:6px 0}
+#pop .wfoot button[data-close]{font-weight:700;background:var(--head);color:#fff;border-color:var(--head)}
+.exp{display:inline-block;background:#7a3fb0;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;vertical-align:middle;margin-left:8px;letter-spacing:.04em}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--head);color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+#toast.show{opacity:1}
+.save{font-size:12px;color:var(--muted)}
+.save.err{color:var(--aInk);font-weight:600}
+.who{font-size:12px;color:var(--muted)}
+.who a{color:var(--accent)}
+#gate{position:fixed;inset:0;z-index:80;background:rgba(29,31,34,.55);display:none;align-items:center;justify-content:center;padding:16px}
+#gateBox{background:var(--paper);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:22px 24px;width:min(440px,100%)}
+#gateBox h2{margin:0 0 8px;font-size:18px}
+#gateBox p{margin:6px 0;color:var(--muted);font-size:13.5px}
+#gateBox code{background:#f2f0eb;padding:1px 5px;border-radius:3px}
+#gateBox label{display:block;margin:12px 0 0;font-size:13px;font-weight:600}
+#gateBox input{display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:15px}
+#gateBox .gbtns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+#gateBox .gprim{background:#c62828;border-color:#a51f1f;color:#fff;font-weight:600;padding:9px}
+#gateBox .gerr{color:var(--aInk);font-weight:600}
+#gateBox .gsm{font-size:12px;margin-top:14px}
+@media (max-width:700px){header.top,.bar,.wrap,.legend,.notes{padding-left:12px;padding-right:12px}}
+@media print{
+  @page{size:A3 landscape;margin:8mm}
+  body{background:#fff}
+  .bar,.rozpisz,.tools,.btn.add,.btn.x,#pop,#toast,.year button,.save{display:none!important}
+  .wrap{overflow:visible;padding:0}
+  table{min-width:0;font-size:10.5px}
+  thead th{position:static}
+  td.m{cursor:default}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Roczny harmonogram i kalendarz konserwacji<span class="exp">v1.6 ARKUSZ · TEST</span></h1>
+    <div class="sub">Maszyna → podzespół → komponent · kliknij pole miesiąca, by wpisać kod</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:18px">
+    <span class="who" id="who"></span>
+    <span class="save" id="save"></span>
+    <div class="year">Rok: <button id="yPrev" title="Poprzedni rok">‹</button><span id="yVal"></span><button id="yNext" title="Następny rok">›</button></div>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="tabs" id="tabs"></div>
+  <input type="search" id="q" placeholder="Szukaj podzespołu, części, osoby…">
+  <span class="sp"></span>
+  <button class="btn" id="bEdit" title="Włącz edycję opisów, czasu, częstotliwości i odpowiedzialnych">✎ Edycja planu</button>
+  <button class="btn" id="bCsv" title="Plik CSV otwiera się w Excelu">Eksport do Excela</button>
+  <button class="btn" id="bJson" title="Kopia zapasowa wszystkich danych">Kopia (JSON)</button>
+  <button class="btn" id="bImp">Wczytaj kopię</button>
+  <button class="btn" id="bPrint">Drukuj</button>
+  <input type="file" id="fImp" accept=".json,application/json" hidden>
+</div>
+
+<div class="wrap">
+  <table id="tbl">
+    <thead>
+      <tr>
+        <th rowspan="2">Maszyna<br>(typ i nr)</th>
+        <th rowspan="2" class="l">Podzespół<br>(nazwa i nr)</th>
+        <th rowspan="2" class="l">Część / komponent wg producenta<br>(nazwa i nr)</th>
+        <th rowspan="2">Typ zadania</th>
+        <th rowspan="2" class="l">Opis zadania</th>
+        <th rowspan="2">Czas<br>[rbh]</th>
+        <th rowspan="2">Częstotliwość</th>
+        <th rowspan="2">Odpowiedzialny</th>
+        <th colspan="12" id="yHead"></th>
+      </tr>
+      <tr id="mHead"></tr>
+    </thead>
+    <tbody id="body"></tbody>
+    <tfoot id="foot"></tfoot>
+  </table>
+</div>
+
+<div class="legend">
+  <span><b style="color:var(--ink)">Klucz:</b></span>
+  <span><span class="chip k-Z">Z</span>zadanie zaplanowane (do wykonania)</span>
+  <span><span class="chip k-W">W</span>zadanie wykonane</span>
+  <span><span class="chip k-A">A</span>wystąpiła awaria</span>
+  <span><span class="chip k-D">D</span>prace dodatkowe (poza planem)</span>
+  <span><span class="chip" style="background:#eee">W+A · W+D · Z+A</span>połączenia — kolor wg pierwszeństwa A › D › W › Z</span>
+</div>
+<div class="notes">
+  <p><b>Typy zadań:</b> Wym — naprawa / wymiana · Smar — smarowanie · Insp — inspekcja · U/R — ustawienie i regulacja · Test — test · Kal — kalibracja.</p>
+  <p><b>Zadania „Co tydzień”:</b> pole miesiąca pokazuje <b>wykonane/zaplanowane tygodnie</b> (np. 3/4, kreskowane podkreślenie). Kliknięcie otwiera tygodnie tego miesiąca — każdy tydzień dostaje własny kod Z / W / A / D. Tydzień należy do miesiąca, w którym wypada jego czwartek (tygodnie ISO), więc żaden nie liczy się podwójnie. W podsumowaniu każdy tydzień to jedno zadanie.</p>
+  <p>Każdy komponent ma własne pola miesięcy. LIH SHENG 2 ma ten sam podział co LIH SHENG 1. Sklejarki, Kaszerownica, KLETT i T-one czekają na podział — w „Edycja planu” dodaje się podzespoły i komponenty.</p>
+  <p>Zmiany zapisują się we <b>wspólnym arkuszu Google</b> (stan zapisu — w prawym górnym rogu). Zmiany innych osób pojawiają się same w ciągu ok. 30 s. Usunięte komponenty zostają w arkuszu ze znacznikiem „usunięty”, a każda zmiana trafia do zakładki „Dziennik”. „Kopia (JSON)” pobiera aktualny stan na dysk.</p>
+</div>
+
+<div id="pop"><div class="t" id="popT"></div><div class="g" id="popG"></div></div>
+<div id="gate"><div id="gateBox"></div></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+const MONTHS=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+const MSHORT=['Sty','Lut','Mar','Kwi','Maj','Cze','Lip','Sie','Wrz','Paź','Lis','Gru'];
+const CODES=['Z','W','A','D','W+A','W+D','Z+A'];
+const FREQS=['Co tydzień','Co miesiąc','Co 2 miesiące','Co kwartał','Co pół roku','Co rok'];
+/* ===== KONFIGURACJA — tu wklej adres aplikacji internetowej z Apps Script (kończy się na /exec) ===== */
+const KONFIG={ url:'https://script.google.com/macros/s/AKfycbwHdbPHLCE9JPkMP3_lYconh78_qOVBUvip24LnKt9blYp8u36h-UVP1jWrfW2SDlpZTA/exec' };
+/* ================================================================================================== */
+const KEY='harmonogram-konserwacji-v1.5', OLD_KEYS=['harmonogram-konserwacji-v1.4','harmonogram-konserwacji-v1.3','harmonogram-konserwacji-v1.1','harmonogram-konserwacji-v1'];
+
+/* ---- v1.4: tygodnie ISO dla zadań „Co tydzień” ----
+   Tydzień należy do miesiąca, w którym wypada jego czwartek (norma ISO 8601) — dzięki temu
+   każdy tydzień liczy się dokładnie w jednym miesiącu. */
+const WEEKLY='Co tydzień';
+const isWeekly=r=>r.freq===WEEKLY;
+let WK=[], WKY=null;
+function weeksOf(year){
+  if(WKY===year) return WK;
+  const jan4=new Date(year,0,4), mon=new Date(year,0,4-((jan4.getDay()+6)%7));
+  const out=[];
+  for(let n=1;n<=53;n++){
+    const m=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+(n-1)*7);
+    const thu=new Date(m.getFullYear(),m.getMonth(),m.getDate()+3);
+    if(thu.getFullYear()!==year) break;
+    out.push({n,mon:m,sun:new Date(m.getFullYear(),m.getMonth(),m.getDate()+6),month:thu.getMonth()});
+  }
+  WK=out; WKY=year; return out;
+}
+const dd=d=>String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');
+function weekStats(r,mi){
+  const ws=weeksOf(D.year).filter(w=>w.month===mi);
+  let plan=0,done=0,a=0,d=0;
+  ws.forEach(w=>{const c=r.weeks[w.n-1]||''; if(c.includes('Z')||c.includes('W')) plan++; if(c.includes('W')) done++; if(c.includes('A')) a++; if(c.includes('D')) d++;});
+  return {ws,plan,done,a,d};
+}
+
+/* v1.3: pola miesięcy są przy każdym komponencie (wierszu), a nie wspólne dla podzespołu.
+   Starsze dane (months na podzespole) — kody kopiowane do każdego komponentu tego podzespołu. */
+function normalize(o){
+  o.machines.forEach(m=>m.groups.forEach(g=>{
+    g.rows.forEach(r=>{
+      if(!Array.isArray(r.months)) r.months=(g.months||Array(12).fill('')).slice();
+      if(!Array.isArray(r.weeks)) r.weeks=Array(53).fill('');
+    });
+    delete g.months;
+  }));
+  return o;
+}
+function excelData(){ return normalize(excelRaw()); }
+
+/* ---- dane przeniesione z Harmonogram_konserwacji_roczny.xlsx ---- */
+function excelRaw(){
+  const CIS='Czyszczenie/Inspekcja/Smarowanie', CID='Czyszcenia/Inspekcja/Dokręcanie';
+  const odd=['Z','','Z','','Z','','Z','','Z','','Z',''], even=['','Z','','Z','','Z','','Z','','Z','','Z'], none=()=>Array(12).fill('');
+  const r=(part,type,opis,czas,freq,odp)=>({part:part||'',type:type||'',opis:opis||'',czas:czas||'',freq:freq||'',odp:odp||''});
+  const cur=[
+    {sub:'Rolki napędowe',months:none(),rows:[r('Łożysko rolki 6204-2RS','Smar','Smarowanie łożysk rolek napędowych','','Co miesiąc','Mechanik zmianowy')]},
+    {sub:'Podajnik/Przedpodajnik',months:odd.slice(),rows:[r('',CIS,'','8 godz','Co 2 miesiące','Operator')]},
+    {sub:'PU #1',months:even.slice(),rows:[r('',CIS,'','8 godz','Co 2 miesiące','Operator')]},
+    {sub:'PU #2',months:odd.slice(),rows:[r('',CIS,'','8 godz','Co 2 miesiące','Operator')]},
+    {sub:'PU #3',months:even.slice(),rows:[r('',CIS,'','8 godz','Co 2 miesiące','Operator')]},
+    {sub:'PU #4',months:odd.slice(),rows:[r('',CIS,'','8 godz','Co 2 miesiące','Operator')]},
+    {sub:'Wykrojnik',months:even.slice(),rows:[r('',CIS,'','2 godz','Co 2 miesiące','Operator')]},
+    {sub:'Stacker',months:odd.slice(),rows:[r('',CIS,'','8 godz','Co 2 miesiące','Operator')]},
+  ];
+  const ls=()=>[
+    {sub:'Podajnik',rows:[r('Półsprzegiełka ',CIS),r('Rolki Gumowe ',CIS)]},
+    {sub:'Marginesy',rows:[r('Rolki Prowadzące',CIS),r('Zaciski Marginesów',CIS),r('Krzywki napędowe',CIS),r('Pasy',CIS)]},
+    {sub:'Wykrojnik',rows:[r('Śruby i rolki mocujące',CIS),r('Stół wykrojnika',CIS)]},
+    {sub:'Sekcja Czyszcząca męska',rows:[r('Zaciski mocujące główne ',CID),r('Zaciski mocujące pomocnicze',CID),r('Zębatki koła główne',CID),r('Zębatki koła pomocnicze',CID),r('Zębatki koła pomocnicze',CID)]},
+    {sub:'Sekcja Czyszcząca damska',rows:[r('Zaciski mocujące główne ',CID),r('Zaciski mocujące pomocnicze',CID),r('Zębatki koła główne',CID),r('Zębatki koła pomocnicze',CID)]},
+    {sub:'Sekcja Wyłamywania  (Gilotyna)',rows:[r('Dobijaki (Prawy/Lewy)',CID),r('Grzebień ( Widły)',CID),r('Siłowniki penumatyczne tył',CID),r('Siłownikim penumatyczne boki',CID)]},
+    {sub:'Grzebień',rows:[r('Dociski Góra',CIS),r('Rolki podtzrymujące',CIS),r('Napęd taśmociągu',CIS),r('Napęd grzebienia',CIS)]},
+  ].map(g=>(g.months=none(),g));
+  return {year:2027,machines:[
+    {name:'CURIONI',groups:cur},
+    {name:'LIH SHENG 1',groups:ls()},
+    {name:'LIH SHENG 2',groups:ls()},
+  ].concat(NEW_MACHINES.map(n=>({name:n,groups:[]})))};
+}
+const NEW_MACHINES=['SKLEJARKA 1','SKLEJARKA 2','SKLEJARKA IICZ.','KASZEROWNICA','KLETT','T-one'];
+const newRow=(t)=>({part:'',type:t?t.type:'',opis:'',czas:t?t.czas:'',freq:t?t.freq:'',odp:t?t.odp:'',months:Array(12).fill(''),weeks:Array(53).fill('')});
+const newGroup=sub=>({sub:sub||'',rows:[newRow()]});
+
+/* ==== v1.6: dane we wspólnym arkuszu Google (przez skrypt Apps Script) ==== */
+let D={year:2027,machines:[]}, view='all', q='', edit=false;
+function addMissing(o){
+  NEW_MACHINES.forEach(n=>{if(!o.machines.some(m=>m.name===n)) o.machines.push({name:n,groups:[]});});
+  return o;
+}
+/* dane zapisane wcześniej w tej przeglądarce (v1–v1.5) — źródło do jednorazowego wczytania do pustego arkusza */
+function localOld(){
+  try{
+    for(const k of [KEY].concat(OLD_KEYS)){
+      const s=localStorage.getItem(k);
+      if(s){const o=JSON.parse(s); if(o&&o.machines) return {klucz:k, dane:normalize(addMissing(o))};}
+    }
+  }catch(e){}
+  return null;
+}
+const ls={get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}, set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+const p2=n=>String(n).padStart(2,'0');
+const $=id=>document.getElementById(id);
+
+let WP=new Map();          // kratki: "id|rok|okres" → kod
+let SERWER_PUSTY=false;    // arkusz bez komponentów — można wczytać dane startowe
+const sesja={pin:ls.get('hk.pin'), kto:ls.get('hk.kto')};
+
+/* stan z arkusza → struktura strony (maszyna → podzespół → komponent) */
+function buildD(st){
+  WP=new Map(); (st.wpisy||[]).forEach(w=>WP.set(w.id+'|'+w.rok+'|'+w.okres,w.kod));
+  const year=(D&&D.machines.length)?D.year:(+ls.get('hk.rok')||st.rok||2027);
+  const ms=(st.maszyny||[]).slice().sort((a,b)=>a.kol-b.kol).map(m=>({name:m.nazwa,groups:[]}));
+  const byName=new Map(ms.map(m=>[m.name,m]));
+  (st.komponenty||[]).slice().sort((a,b)=>a.kol-b.kol||a.id-b.id).forEach(k=>{
+    let m=byName.get(k.maszyna); if(!m){m={name:k.maszyna,groups:[]};ms.push(m);byName.set(k.maszyna,m);}
+    let g=m.groups[m.groups.length-1];
+    if(!g||g.sub!==k.sub){g={sub:k.sub,rows:[]};m.groups.push(g);} // podzespół = kolejne wiersze o tej samej nazwie
+    g.rows.push({id:k.id,kol:k.kol,part:k.part,type:k.type,opis:k.opis,czas:k.czas,freq:k.freq,odp:k.odp});
+  });
+  SERWER_PUSTY=!(st.komponenty||[]).length;
+  D={year,machines:ms}; fillYear();
+}
+function fillYear(){
+  D.machines.forEach(m=>m.groups.forEach(g=>g.rows.forEach(r=>{
+    r.months=Array.from({length:12},(_,i)=>WP.get(r.id+'|'+D.year+'|M'+p2(i+1))||'');
+    r.weeks=Array.from({length:53},(_,i)=>WP.get(r.id+'|'+D.year+'|T'+p2(i+1))||'');
+  })));
+}
+function maxKol(){let m=0; D.machines.forEach(x=>x.groups.forEach(g=>g.rows.forEach(r=>{if(r.kol>m)m=r.kol;}))); return m;}
+function kolAfter(row){ // kolejność między tym wierszem a następnym (żeby nowy komponent trafił na koniec podzespołu)
+  let next=Infinity; D.machines.forEach(x=>x.groups.forEach(g=>g.rows.forEach(r=>{if(r.kol>row.kol&&r.kol<next)next=r.kol;})));
+  return next===Infinity?row.kol+1:(row.kol+next)/2;
+}
+const pola=r=>({part:r.part,type:r.type,opis:r.opis,czas:r.czas,freq:r.freq,odp:r.odp,kol:r.kol});
+
+/* ---- połączenie ze skryptem ---- */
+async function rpc(body){
+  const res=await fetch(KONFIG.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(Object.assign({},body,{pin:sesja.pin,kto:sesja.kto}))});
+  let o; try{o=await res.json();}catch(e){throw {siec:true};}
+  return o;
+}
+/* kolejka zapisów: po kolei, każdy zapis budowany w chwili wysyłki (nowe komponenty mają już numer z arkusza) */
+const Q=[]; let busy=false, lastSave=0, offline=false;
+function send(build){Q.push(build); status(); pump();}
+async function pump(){
+  if(busy||!Q.length) return; busy=true;
+  const build=Q[0]; let body=null;
+  try{
+    body=build();
+    if(body){
+      const o=await rpc(body);
+      if(!o.ok){
+        if(o.blad==='ZLY_PIN'||o.blad==='BRAK_PIN'){busy=false; offline=false; status(); gate(o.blad); return;}
+        toast('Nie zapisano ('+o.blad+') — odświeżam dane'); Q.shift(); busy=false; status(); setTimeout(refresh,300); pump(); return;
+      }
+      if(body.po) body.po(o);
+    }
+    Q.shift(); lastSave=Date.now(); offline=false;
+  }catch(err){
+    offline=true; busy=false; status(); setTimeout(pump,5000); return;  // brak sieci — ponawiam co 5 s
+  }
+  busy=false; status(); if(Q.length) pump(); else status();
+}
+function status(){
+  const e=$('save'); if(!e) return;
+  const t=d=>new Date(d).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  e.classList.toggle('err',offline);
+  if(offline) e.textContent='Brak połączenia — ponawiam zapis ('+Q.length+')';
+  else if(Q.length||timers.size) e.textContent='Zapisywanie… ('+(Q.length+timers.size)+')';
+  else if(lastSave) e.textContent='Zapisano w arkuszu '+t(lastSave);
+  else if(lastLoad) e.textContent='Wczytano z arkusza '+t(lastLoad);
+  else e.textContent='';
+}
+let lastLoad=0, loading=false;
+async function refresh(force){
+  if(loading||!sesja.pin) return;
+  const editing=document.activeElement&&document.activeElement.matches('[contenteditable],select');
+  if(!force&&(Q.length||busy||timers.size||popFor||editing||document.hidden)) return;
+  loading=true;
+  try{
+    const o=await rpc({akcja:'stan'});
+    if(!o.ok){ if(o.blad==='ZLY_PIN'||o.blad==='BRAK_PIN') gate(o.blad); return; }
+    if(!force&&(Q.length||busy||timers.size||popFor)) return;      // w międzyczasie ktoś zaczął zmieniać — nie nadpisuj
+    buildD(o); lastLoad=Date.now(); offline=false;
+    if(SERWER_PUSTY) gate('PUSTY'); else { hideGate(); dopiszMaszyny(o); }
+    render(); status();
+  }catch(e){ offline=true; status(); if(!D.machines.length) gate('SIEC'); }
+  finally{ loading=false; }
+}
+function dopiszMaszyny(o){
+  const brak=NEW_MACHINES.concat(['CURIONI','LIH SHENG 1','LIH SHENG 2']).filter(n=>!(o.maszyny||[]).some(m=>m.nazwa===n));
+  if(!brak.length) return;
+  brak.forEach(n=>{if(!D.machines.some(m=>m.name===n)) D.machines.push({name:n,groups:[]});});
+  send(()=>({akcja:'maszyny',nazwy:brak}));
+}
+setInterval(()=>refresh(false),30000);                       // zmiany innych osób — co 30 s
+document.addEventListener('visibilitychange',()=>{if(!document.hidden) refresh(false);});
+
+/* ---- wysyłanie zmian ---- */
+function sendKratki(list){ // list: [{row, okres, kod}] — rok z chwili kliknięcia
+  const y=D.year;
+  list.forEach(x=>{ if(x.row.id) WP.set(x.row.id+'|'+y+'|'+x.okres,x.kod); });
+  send(()=>{
+    const lista=list.filter(x=>x.row.id&&!x.row.usuniety).map(x=>{WP.set(x.row.id+'|'+y+'|'+x.okres,x.kod); return {id:x.row.id,rok:y,okres:x.okres,kod:x.kod};});
+    return lista.length?{akcja:'kratki',lista}:null;
+  });
+}
+const timers=new Map();
+const KK=new WeakMap(); function kk(o,f){let m=KK.get(o); if(!m){m={};KK.set(o,m);} return m[f]||(m[f]={});} // klucz „to pole w tym wierszu”
+function sendPole(key,build){ // tekst: zapis 0,8 s po ostatnim naciśnięciu klawisza
+  const old=timers.get(key); if(old) clearTimeout(old.t);
+  timers.set(key,{build,t:setTimeout(()=>{timers.delete(key); send(build);},800)});
+  status();
+}
+function flushPola(){ timers.forEach(v=>{clearTimeout(v.t); send(v.build);}); timers.clear(); }
+function poleBuild(f,target){ // target: wiersz (row) albo podzespół (group)
+  return ()=>{
+    const rows=f==='sub'?target.rows:[target];
+    const ids=rows.filter(r=>r.id&&!r.usuniety).map(r=>r.id);
+    if(!ids.length) return null;
+    return {akcja:'pole',ids,pole:f,wartosc:f==='sub'?target.sub:target[f]};
+  };
+}
+function sendDodaj(m,g,rows){
+  send(()=>({akcja:'dodaj',maszyna:m.name,sub:g.sub,rows:rows.map(pola),po:o=>{o.ids.forEach((id,i)=>{rows[i].id=id;});}}));
+}
+function sendUsun(rows){
+  rows.forEach(r=>r.usuniety=true);
+  send(()=>{const ids=rows.filter(r=>r.id).map(r=>r.id); return ids.length?{akcja:'usun',ids}:null;});
+}
+
+/* ---- ekran wejścia: PIN, imię, dane startowe ---- */
+function gate(stan,msg){
+  const g=$('gate'); g.style.display='flex';
+  let h='';
+  if(!KONFIG.url){
+    h=`<h2>Brak adresu skryptu</h2><p>W pliku strony, na górze skryptu, w <code>KONFIG.url</code> wklej adres aplikacji internetowej z Apps Script (kończy się na <code>/exec</code>).</p>`;
+  } else if(stan==='PUSTY'){
+    const lo=localOld();
+    h=`<h2>Arkusz jest pusty</h2><p>Wczytaj dane startowe — robi się to <b>raz</b>. Potem wszyscy pracują na wspólnym arkuszu.</p>
+      <div class="gbtns">${lo?`<button class="btn gprim" data-start="local">Z tej przeglądarki (to, co wpisano wcześniej)</button>`:''}
+      <button class="btn${lo?'':' gprim'}" data-start="excel">Dane startowe z Excela</button>
+      <button class="btn" data-start="plik">Z pliku kopii (JSON)</button></div>
+      <p class="gsm">Wpisuje: <b>${esc(sesja.kto)}</b> · <a href="#" data-start="osoba">zmień</a></p>`;
+  } else if(stan==='SIEC'){
+    h=`<h2>Brak połączenia z arkuszem</h2><p>Sprawdź internet albo adres skryptu. Ponawiam co 30 s.</p><div class="gbtns"><button class="btn gprim" data-start="ponow">Spróbuj teraz</button></div>`;
+  } else if(stan==='BRAK_PIN'){
+    h=`<h2>PIN nie jest ustawiony</h2><p>W arkuszu Google, w zakładce <b>Ustawienia</b>, wpisz PIN w kolumnie „wartosc” obok słowa PIN. Potem kliknij „Spróbuj teraz”.</p><div class="gbtns"><button class="btn gprim" data-start="ponow">Spróbuj teraz</button></div>`;
+  } else {
+    h=`<h2>Harmonogram konserwacji</h2><p>Podaj swoje imię (pojawi się w dzienniku zmian) i PIN.</p>
+      <label>Imię<input id="gKto" maxlength="40" value="${esc(sesja.kto)}" autocomplete="name"></label>
+      <label>PIN<input id="gPin" type="password" inputmode="numeric" autocomplete="off"></label>
+      ${stan==='ZLY_PIN'?'<p class="gerr">Nieprawidłowy PIN.</p>':''}${msg?`<p class="gerr">${esc(msg)}</p>`:''}
+      <div class="gbtns"><button class="btn gprim" data-start="wejdz">Wejdź</button></div>`;
+  }
+  $('gateBox').innerHTML=h;
+  const f=$('gKto'); if(f){(f.value?$('gPin'):f).focus();}
+}
+function hideGate(){$('gate').style.display='none';}
+async function wejdz(){
+  const kto=$('gKto').value.trim(), pin=$('gPin').value.trim();
+  if(!kto) return gate('LOGIN','Wpisz imię.');
+  if(!pin) return gate('LOGIN','Wpisz PIN.');
+  sesja.kto=kto; sesja.pin=pin; ls.set('hk.kto',kto); ls.set('hk.pin',pin);
+  $('gateBox').innerHTML='<h2>Łączenie z arkuszem…</h2>';
+  await refresh(true); if(Q.length) pump();
+  osoba();
+}
+function osoba(){$('who').innerHTML=sesja.kto?`Wpisuje: <b>${esc(sesja.kto)}</b> · <a href="#" id="whoChange">zmień</a>`:'';}
+/* dane startowe → jeden import do pustego arkusza */
+async function importuj(o){
+  o=normalize(addMissing(o));
+  const maszyny=o.machines.map(m=>m.name), komponenty=[], wpisy=[], y=o.year||2027;
+  o.machines.forEach(m=>m.groups.forEach(g=>g.rows.forEach(r=>{
+    const nr=komponenty.length;
+    komponenty.push({maszyna:m.name,sub:g.sub,part:r.part||'',type:r.type||'',opis:r.opis||'',czas:r.czas||'',freq:r.freq||'',odp:r.odp||''});
+    (r.months||[]).forEach((c,i)=>{if(c) wpisy.push({nr,rok:y,okres:'M'+p2(i+1),kod:c});});
+    (r.weeks||[]).forEach((c,i)=>{if(c) wpisy.push({nr,rok:y,okres:'T'+p2(i+1),kod:c});});
+  })));
+  $('gateBox').innerHTML='<h2>Wczytywanie danych do arkusza…</h2><p>To potrwa kilka sekund.</p>';
+  try{
+    const r=await rpc({akcja:'import',maszyny,komponenty,wpisy});
+    if(!r.ok) throw new Error(r.blad);
+    ls.set('hk.rok',String(y)); D={year:y,machines:[]};
+    toast('Wczytano: '+komponenty.length+' komponentów'); await refresh(true);
+  }catch(e){ toast('Nie udało się wczytać: '+(e.message||'brak połączenia')); gate('PUSTY'); }
+}
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-start]'); if(s){
+    e.preventDefault(); const a=s.dataset.start;
+    if(a==='wejdz') wejdz();
+    else if(a==='ponow'){ $('gateBox').innerHTML='<h2>Łączenie z arkuszem…</h2>'; refresh(true); }
+    else if(a==='osoba') gate('LOGIN');
+    else if(a==='local'){const lo=localOld(); if(lo) importuj(lo.dane);}
+    else if(a==='excel') importuj(excelData());
+    else if(a==='plik'){ IMPORT_START=true; $('fImp').click(); }
+    return;
+  }
+  if(e.target.id==='whoChange'){e.preventDefault(); gate('LOGIN');}
+},true);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('gate').style.display==='flex'&&$('gPin')) wejdz();});
+let IMPORT_START=false;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function cls(code){ if(!code) return ''; if(code.includes('A')) return 'k-A'; if(code.includes('D')) return 'k-D'; if(code.includes('W')) return 'k-W'; return 'k-Z'; }
+function curMonth(){const n=new Date(); return n.getFullYear()===D.year?n.getMonth():-1;}
+
+function matches(m,g,row){
+  if(!q) return true;
+  const hay=[m.name,g.sub,row.part,row.type,row.opis,row.czas,row.freq,row.odp].join(' ').toLowerCase();
+  return hay.includes(q);
+}
+
+/* ---- rysowanie ---- */
+function render(){
+  $('yVal').textContent=D.year; $('yHead').textContent='Rok '+D.year;
+  const cm=curMonth();
+  $('mHead').innerHTML=MONTHS.map((m,i)=>`<th class="${i===cm?'cur':''}" title="${m}">${MSHORT[i]}</th>`).join('');
+  // zakładki
+  $('tabs').innerHTML=[['all','Wszystkie']].concat(D.machines.map((m,i)=>[String(i),m.name])).map(([k,l])=>`<button data-k="${k}" class="${view===k?'on':''}">${esc(l)}</button>`).join('');
+  let html='';
+  const shown=[];
+  D.machines.forEach((m,mi)=>{
+    if(view!=='all'&&view!==String(mi)) return;
+    const gs=[];
+    m.groups.forEach((g,gi)=>{
+      const rows=g.rows.map((r,ri)=>({r,ri})).filter(x=>matches(m,g,x.r));
+      if(rows.length) gs.push({g,gi,rows});
+    });
+    const nameHit=!q||m.name.toLowerCase().includes(q);
+    if(!gs.length&&!(nameHit&&(!m.groups.length||edit))) return;
+    shown.push({m,gs});
+    const addRow=edit?1:0;
+    if(!gs.length){
+      html+=`<tbody class="grp mstart emptyM"><tr><td class="mach" rowspan="${1+addRow}">${esc(m.name)}</td><td colspan="19" class="none">Brak podzespołów — do uzupełnienia${edit?'':' (włącz „Edycja planu”, aby dodać)'}</td></tr>`;
+      if(edit) html+=`<tr><td colspan="19"><button class="btn add" data-act="addG" data-m="${mi}">+ podzespół</button></td></tr>`;
+      html+='</tbody>'; return;
+    }
+    const total=gs.reduce((s,x)=>s+x.rows.length,0)+addRow;
+    gs.forEach((x,xi)=>{
+      const {g,gi,rows}=x;
+      html+=`<tbody class="grp${xi===0?' mstart':''}">`;
+      rows.forEach(({r,ri},k)=>{
+        const id=`${mi}.${gi}.${ri}`;
+        html+='<tr>';
+        if(xi===0&&k===0) html+=`<td class="mach" rowspan="${total}">${esc(m.name)}</td>`;
+        if(k===0) html+=`<td class="subasm" rowspan="${rows.length}">${ed(g.sub,`${mi}.${gi}`,'sub')}${edit?`<div class="tools"><button class="btn add" data-act="addR" data-g="${mi}.${gi}">+ komponent</button><button class="btn del" data-act="delG" data-g="${mi}.${gi}" title="Usuń cały podzespół">usuń</button></div>`:''}</td>`;
+        html+=`<td class="txt">${ed(r.part,id,'part')}${edit&&g.rows.length>1?`<button class="btn del x" data-act="delR" data-id="${id}" title="Usuń ten komponent">×</button>`:''}</td>`;
+        html+=`<td class="txt c">${ed(r.type,id,'type')}</td>`;
+        html+=`<td class="txt">${ed(r.opis,id,'opis')}</td>`;
+        html+=`<td class="c">${ed(r.czas,id,'czas')}</td>`;
+        html+=`<td class="c">${freqCell(r,id)}</td>`;
+        html+=`<td class="c">${ed(r.odp,id,'odp')}</td>`;
+        for(let i=0;i<12;i++){
+          if(isWeekly(r)){
+            const s=weekStats(r,i);
+            const k=s.a?'k-A':s.d?'k-D':(s.plan&&s.done===s.plan)?'k-W':s.plan?'k-Z':'';
+            const txt=s.plan?`${s.done}/${s.plan}`:'';
+            const flags=(s.a?'<sup>A</sup>':'')+(s.d?'<sup>D</sup>':'');
+            html+=`<td class="m wk ${k}${i===cm?' cur':''}" data-id="${id}" data-i="${i}" title="Tygodnie ${s.ws.map(w=>w.n).join(', ')} · wykonane/zaplanowane">${txt}${flags}</td>`;
+          } else {const c=r.months[i]||'';html+=`<td class="m ${cls(c)}${i===cm?' cur':''}" data-id="${id}" data-i="${i}">${esc(c)}</td>`;}
+        }
+        html+='</tr>';
+      });
+      html+='</tbody>';
+    });
+    if(edit) html+=`<tbody class="grp"><tr><td colspan="19"><button class="btn add" data-act="addG" data-m="${mi}">+ podzespół do ${esc(m.name)}</button></td></tr></tbody>`;
+  });
+  if(!html) html='<tbody><tr><td colspan="20" style="text-align:center;padding:24px;color:var(--muted)">Brak pozycji dla tego wyszukiwania.</td></tr></tbody>';
+  // jeden <tbody> (rowspan maszyny nie przechodzi między grupami wierszy) — klasy grup trafiają na pierwszy wiersz
+  $('body').innerHTML=html.replace(/<tbody class="([^"]*)">\s*<tr/g,'<tr class="$1"').replace(/<\/?tbody>/g,'');
+  renderFoot(shown);
+}
+function ed(v,id,f){
+  if(edit) return `<span contenteditable="true" data-id="${id}" data-f="${f}">${esc(v)}</span>`;
+  return v?esc(v):'<span class="empty">—</span>';
+}
+function freqCell(r,id){
+  let s;
+  if(edit){
+    const opts=[''].concat(FREQS); if(r.freq&&!FREQS.includes(r.freq)) opts.push(r.freq);
+    s=`<select class="freq" data-id="${id}">${opts.map(o=>`<option${o===r.freq?' selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  } else s=r.freq?esc(r.freq):'<span class="empty">—</span>';
+  s+=`<br><button class="btn rozpisz" data-id="${id}" title="Wpisuje Z w wolne miesiące według częstotliwości">Rozpisz Z</button>`;
+  return s;
+}
+function renderFoot(shown){
+  const plan=Array(12).fill(0),done=Array(12).fill(0),awa=Array(12).fill(0),dod=Array(12).fill(0);
+  const add=(c,i)=>{
+    if(!c) return;
+    if(c.includes('Z')||c.includes('W')) plan[i]++;
+    if(c.includes('W')) done[i]++;
+    if(c.includes('A')) awa[i]++;
+    if(c.includes('D')) dod[i]++;
+  };
+  const W=weeksOf(D.year);
+  shown.forEach(({gs})=>gs.forEach(({rows})=>rows.forEach(({r})=>{
+    if(isWeekly(r)) W.forEach(w=>add(r.weeks[w.n-1],w.month)); // każdy tydzień = jedno zadanie
+    else r.months.forEach(add);
+  })));
+  const sum=a=>a.reduce((x,y)=>x+y,0);
+  const row=(lab,arr,f,extra='')=>`<tr class="${extra}"><td class="lab" colspan="8">${lab}</td>${arr.map(f).join('')}</tr>`;
+  const n=v=>`<td class="c">${v||''}</td>`;
+  const pct=(v,i)=>`<td class="c">${plan[i]?Math.round(done[i]/plan[i]*100)+'%':''}</td>`;
+  const tp=sum(plan), td=sum(done);
+  $('foot').innerHTML=
+    `<tr><td colspan="20" class="lab" style="background:var(--head);color:#fff">Monitorowanie realizacji — liczba zadań${view==='all'?'':' · '+esc(D.machines[+view].name)} · cały rok: zaplanowane ${tp}, wykonane ${td}${tp?' ('+Math.round(td/tp*100)+'%)':''}, awarie ${sum(awa)}, prace dodatkowe ${sum(dod)}</td></tr>`+
+    row('Zadania zaplanowane (Z)',plan,n)+row('Zadania wykonane (W)',done,n)+row('Realizacja planu (%)',plan,pct,'pct')+row('Awarie (A)',awa,n)+row('Prace dodatkowe (D)',dod,n);
+}
+
+/* ---- kody miesięcy ---- */
+let popFor=null;
+function openPop(td){
+  const [mi,gi,ri]=td.dataset.id.split('.').map(Number), i=+td.dataset.i, g=D.machines[mi].groups[gi], row=g.rows[ri];
+  popFor={row,i,weekly:isWeekly(row)};
+  $('popT').innerHTML=`<b>${esc(D.machines[mi].name)}</b> · ${esc(g.sub)}${row.part?' · '+esc(row.part):''}<br>${MONTHS[i]} ${D.year}${popFor.weekly?' · zadanie co tydzień':''}`;
+  fillPop();
+  const p=$('pop'); p.classList.toggle('weekly',popFor.weekly); p.style.display='block';
+  const b=td.getBoundingClientRect(), w=p.offsetWidth, h=p.offsetHeight;
+  let x=Math.min(b.left, innerWidth-w-8), y=b.bottom+4; if(y+h>innerHeight-8) y=b.top-h-4;
+  p.style.left=Math.max(8,x)+'px'; p.style.top=Math.max(8,y)+'px';
+}
+function fillPop(){
+  const {row,i,weekly}=popFor;
+  if(!weekly){
+    $('popG').innerHTML=CODES.map(c=>`<button data-c="${c}" class="${cls(c)}${row.months[i]===c?' sel':''}">${c}</button>`).join('')+`<button data-c="" class="clr">Wyczyść pole</button>`;
+    return;
+  }
+  const ws=weeksOf(D.year).filter(w=>w.month===i);
+  $('popG').innerHTML=ws.map(w=>{
+    const cur=row.weeks[w.n-1]||'';
+    return `<div class="wrow"><div class="wl"><b>Tydz. ${w.n}</b><span>${dd(w.mon)}–${dd(w.sun)}</span></div><div class="wb">`+
+      CODES.map(c=>`<button data-w="${w.n}" data-c="${c}" class="${cls(c)}${cur===c?' sel':''}">${c}</button>`).join('')+
+      `<button data-w="${w.n}" data-c="" class="x" title="Wyczyść pole tego tygodnia"${cur?'':' disabled'}>Wyczyść</button></div></div>`;
+  }).join('')+`<div class="wfoot"><button data-all="Z">Cały miesiąc: Z</button><button data-all="W">Cały miesiąc: W</button></div>`+
+    `<div class="wfoot"><button data-all="" class="clr">Wyczyść cały miesiąc</button><button data-close="1">Gotowe</button></div>`;
+}
+function closePop(){$('pop').style.display='none';popFor=null;}
+
+function stepsFor(freq){
+  switch(freq){
+    case 'Co tydzień': case 'Co miesiąc': return [0,1,2,3,4,5,6,7,8,9,10,11];
+    case 'Co 2 miesiące': return [0,2,4,6,8,10];
+    case 'Co kwartał': return [0,3,6,9];
+    case 'Co pół roku': return [0,6];
+    case 'Co rok': return [0];
+  }
+  return null;
+}
+function focusLast(id,f){const el=document.querySelector(`[contenteditable][data-id="${id}"][data-f="${f}"]`); if(el){el.focus(); el.scrollIntoView({block:'center'});}}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2200);}
+
+/* ---- zdarzenia ---- */
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('#tabs button'); if(tab){view=tab.dataset.k;render();return;}
+  const td=e.target.closest('td.m'); if(td){openPop(td);return;}
+  const cb=e.target.closest('#popG button');
+  if(cb&&popFor){
+    if(cb.dataset.close){closePop();return;}
+    const row=popFor.row;
+    if(popFor.weekly){
+      const zm=[];
+      if(cb.dataset.all!==undefined){ // wszystkie tygodnie miesiąca naraz (W nie nadpisuje awarii/prac dodatkowych; '' = wyczyść)
+        const v=cb.dataset.all, ws=weeksOf(D.year).filter(w=>w.month===popFor.i);
+        if(v===''&&ws.some(w=>row.weeks[w.n-1])&&!confirm(`Wyczyścić wszystkie tygodnie: ${MONTHS[popFor.i].toLowerCase()}?`)) return;
+        ws.forEach(w=>{const c=row.weeks[w.n-1]||''; if(!(v==='W'&&/[AD]/.test(c))&&c!==v){row.weeks[w.n-1]=v; zm.push({row,okres:'T'+p2(w.n),kod:v});}});
+      } else { const n=+cb.dataset.w; if((row.weeks[n-1]||'')!==cb.dataset.c){row.weeks[n-1]=cb.dataset.c; zm.push({row,okres:'T'+p2(n),kod:cb.dataset.c});} }
+      if(zm.length) sendKratki(zm);
+      render(); fillPop(); return; // okienko zostaje otwarte — można odhaczać kolejne tygodnie
+    }
+    if((row.months[popFor.i]||'')!==cb.dataset.c){ row.months[popFor.i]=cb.dataset.c; sendKratki([{row,okres:'M'+p2(popFor.i+1),kod:cb.dataset.c}]); }
+    closePop();render();return;
+  }
+  const act=e.target.closest('[data-act]');
+  if(act){
+    const a=act.dataset.act;
+    if(a==='addG'){const m=D.machines[+act.dataset.m], g=newGroup(''); g.rows[0].kol=maxKol()+1; m.groups.push(g); sendDodaj(m,g,g.rows.slice()); render(); focusLast(`${+act.dataset.m}.${m.groups.length-1}`,'sub');}
+    else if(a==='addR'){const [mi,gi]=act.dataset.g.split('.').map(Number), g=D.machines[mi].groups[gi]; const t=g.rows[g.rows.length-1]; const r=newRow(t); r.kol=kolAfter(t); g.rows.push(r); sendDodaj(D.machines[mi],g,[r]); render(); focusLast(`${mi}.${gi}.${g.rows.length-1}`,'part');}
+    else if(a==='delG'){const [mi,gi]=act.dataset.g.split('.').map(Number), g=D.machines[mi].groups[gi];
+      if(confirm(`Usunąć podzespół „${g.sub||'(bez nazwy)'}” z ${D.machines[mi].name} razem z ${g.rows.length} komponentami?\n\nW arkuszu nic nie zniknie — komponenty dostaną znacznik „usunięty” i da się je przywrócić.`)){D.machines[mi].groups.splice(gi,1); sendUsun(g.rows); render();}}
+    else if(a==='delR'){const [mi,gi,ri]=act.dataset.id.split('.').map(Number), g=D.machines[mi].groups[gi];
+      if(confirm(`Usunąć komponent „${g.rows[ri].part||'(bez nazwy)'}”?\n\nW arkuszu dostanie znacznik „usunięty” i da się go przywrócić.`)){const r=g.rows.splice(ri,1); sendUsun(r); render();}}
+    return;
+  }
+  const rz=e.target.closest('.rozpisz');
+  if(rz){
+    const [mi,gi,ri]=rz.dataset.id.split('.').map(Number), row=D.machines[mi].groups[gi].rows[ri];
+    const steps=stepsFor(row.freq);
+    if(!steps){toast('Najpierw wybierz częstotliwość w tym wierszu');return;}
+    const zm=[];
+    if(isWeekly(row)){
+      if(row.weeks.some(c=>c)&&!confirm('Ten wiersz ma już wpisane kody. Dopisać Z tylko w pustych tygodniach?')) return;
+      weeksOf(D.year).forEach(w=>{if(!row.weeks[w.n-1]){row.weeks[w.n-1]='Z'; zm.push({row,okres:'T'+p2(w.n),kod:'Z'});}});
+      if(zm.length) sendKratki(zm);
+      render();toast('Rozpisano: Z w każdym tygodniu roku');return;
+    }
+    if(row.months.some(c=>c)&&!confirm('Ten wiersz ma już wpisane kody. Dopisać Z tylko w pustych miesiącach?')) return;
+    steps.forEach(i=>{if(!row.months[i]){row.months[i]='Z'; zm.push({row,okres:'M'+p2(i+1),kod:'Z'});}});
+    if(zm.length) sendKratki(zm);
+    render();toast('Rozpisano: '+row.freq.toLowerCase());return;
+  }
+  if(!e.target.closest('#pop')) closePop();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop();});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.matches('[contenteditable][data-id]')){
+    const p=t.dataset.id.split('.').map(Number), f=t.dataset.f, v=t.innerText.replace(/\n+$/,'');
+    const g=D.machines[p[0]].groups[p[1]];
+    if(f==='sub'){ g.sub=v; sendPole(kk(g,'sub'),poleBuild('sub',g)); }
+    else { const r=g.rows[p[2]]; r[f]=v; sendPole(kk(r,f),poleBuild(f,r)); }
+  }
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.matches('select.freq')){const p=t.dataset.id.split('.').map(Number), r=D.machines[p[0]].groups[p[1]].rows[p[2]]; r.freq=t.value; send(poleBuild('freq',r)); render();
+    if(t.value===WEEKLY) toast('Ten wiersz liczy się teraz w tygodniach — kliknij miesiąc, by odhaczać tygodnie');}
+});
+document.addEventListener('focusout',e=>{if(e.target.matches('[contenteditable][data-id]')) flushPola();});
+$('q').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
+$('bEdit').onclick=()=>{edit=!edit;document.body.classList.toggle('edit',edit);$('bEdit').classList.toggle('on',edit);$('bEdit').textContent=edit?'✓ Zakończ edycję':'✎ Edycja planu';render();};
+$('yPrev').onclick=()=>changeYear(-1); $('yNext').onclick=()=>changeYear(1);
+function changeYear(d){ // każdy rok ma w arkuszu własne kratki — zmiana roku tylko przełącza widok
+  closePop(); D.year+=d; ls.set('hk.rok',String(D.year)); fillYear(); render();
+}
+$('bPrint').onclick=()=>{closePop();print();};
+function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+const stamp=()=>new Date().toISOString().slice(0,10);
+$('bJson').onclick=()=>download(`harmonogram-konserwacji-${D.year}-kopia-${stamp()}.json`,new Blob([JSON.stringify(D,null,1)],{type:'application/json'}));
+$('bImp').onclick=()=>{
+  if(!SERWER_PUSTY){ toast('Kopię można wczytać tylko do pustego arkusza — dane są już we wspólnym arkuszu'); return; }
+  $('fImp').click();
+};
+$('fImp').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  f.text().then(t=>{
+    const o=JSON.parse(t); if(!o||!Array.isArray(o.machines)) throw 0;
+    if(!SERWER_PUSTY){ toast('Arkusz nie jest już pusty — kopii nie wczytano'); return; }
+    importuj(o);
+  }).catch(()=>toast('To nie jest plik kopii harmonogramu')).finally(()=>{e.target.value=''; IMPORT_START=false;});
+};
+$('bCsv').onclick=()=>{
+  const c=v=>{v=String(v==null?'':v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const L=[['Maszyna','Podzespół','Część / komponent','Typ zadania','Opis zadania','Czas roboczogodziny','Częstotliwość','Odpowiedzialny'].concat(MONTHS.map(m=>m+' '+D.year))];
+  D.machines.forEach(m=>{ if(!m.groups.length) L.push([m.name]); m.groups.forEach(g=>g.rows.forEach(r=>L.push([m.name,g.sub,r.part,r.type,r.opis,r.czas,r.freq,r.odp].concat(isWeekly(r)?MONTHS.map((_,i)=>weeksOf(D.year).filter(w=>w.month===i&&r.weeks[w.n-1]).map(w=>'T'+w.n+':'+r.weeks[w.n-1]).join(' ')):r.months))));});
+  download(`harmonogram-konserwacji-${D.year}-${stamp()}.csv`,new Blob(['﻿'+L.map(r=>r.map(c).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}));
+};
+
+/* ---- start ---- */
+render(); osoba();
+if(!KONFIG.url) gate('BRAK_URL');
+else if(!sesja.pin||!sesja.kto) gate('LOGIN');
+else { gate('LOGIN'); $('gateBox').innerHTML='<h2>Łączenie z arkuszem…</h2>'; refresh(true); }
+window.addEventListener('beforeunload',e=>{ flushPola(); if(Q.length){e.preventDefault(); e.returnValue='';} }); // niezapisane zmiany
+window.HK={get data(){return D;},render,excelData,setView:v=>{view=v;render();},refresh,get kolejka(){return Q.length+timers.size;},KONFIG,gate};
+})();
+</script>
+</body>
+</html>
